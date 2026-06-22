@@ -1,5 +1,8 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
+#UseHook true          ; implement hotkeys via the keyboard hook so they fire reliably during Send
+SendMode "Event"       ; Event mode does NOT deactivate the hook while typing, unlike SendInput,
+                       ; so Ctrl+F9 always registers (SendInput briefly blinds the hook per keystroke)
 ;
 ; Human Typer — types your own text into a focused field like a human would,
 ; so it goes in without triggering copy/paste detection.
@@ -18,7 +21,7 @@ g.SetFont("s10", "Segoe UI")
 g.Add("Text", , "Paste your text:")
 g.Add("Edit", "w560 r15 vBody")
 g.Add("Text", "xm", "Speed (WPM):")
-g.Add("Edit", "x+8 w60 vWPM", "45")
+g.Add("Edit", "x+8 w60 vWPM", "60")
 g.Add("Text", "x+16", "Start delay (s):")
 g.Add("Edit", "x+8 w50 vDelay", "5")
 g.Add("Checkbox", "x+16 vShiftEnter Checked", "Shift+Enter for line breaks (chat apps)")
@@ -47,7 +50,7 @@ Start() {
     }
     wpm := Integer(d.WPM)
     if (wpm < 1)
-        wpm := 45
+        wpm := 60
     Typing := true, Abort := false
     g["Body"].Opt("+ReadOnly")   ; protect the source text while typing
     secs := Integer(d.Delay)
