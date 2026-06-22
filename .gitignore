@@ -1,0 +1,8 @@
+# Windows alternate data stream markers (created in WSL)
+*:Zone.Identifier
+
+# Claude Code local settings / memory
+.claude/
+
+# Compiled AutoHotkey output
+*.exe
