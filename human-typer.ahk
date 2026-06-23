@@ -4,7 +4,7 @@
 SendMode "Event"       ; Event mode does NOT deactivate the hook while typing, unlike SendInput,
                        ; so Ctrl+F9 always registers (SendInput briefly blinds the hook per keystroke)
 ;
-; Human Typer — types your own text into a focused field like a human would,
+; Human Typer - types your own text into a focused field like a human would,
 ; so it goes in without triggering copy/paste detection.
 ;
 ; Usage:
@@ -28,6 +28,7 @@ g.Add("Checkbox", "x+16 vShiftEnter Checked", "Shift+Enter for line breaks (chat
 g.Add("Button", "xm w130", "Start  (F9)").OnEvent("Click", (*) => Start())
 g.Add("Button", "x+8 w130", "Stop  (Ctrl+F9)").OnEvent("Click", (*) => Stop())
 g.Add("Text", "xm w560 vStatus", "Ready.  Abort = Ctrl+F9")
+g.Add("Progress", "xm w560 h18 vBar Range0-100", 0)
 g.OnEvent("Close", (*) => ExitApp())
 g.Show()
 
@@ -60,8 +61,11 @@ Start() {
         g["Status"].Text := "Focus the target field... " (secs - A_Index + 1) "s"
         Sleep 1000
     }
-    if !Abort
+    if !Abort {
         TypeHuman(StrReplace(d.Body, "`r`n", "`n"), wpm, d.ShiftEnter)
+        if !Abort
+            g["Bar"].Value := 100
+    }
     g["Body"].Opt("-ReadOnly")
     g["Status"].Text := Abort ? "Aborted." : "Done."
     Typing := false
@@ -71,12 +75,14 @@ TypeHuman(text, wpm, shiftEnter) {
     global Abort
     base := 12000 / wpm           ; ms per char (~5 chars/word)
     chars := StrSplit(text)
+    totalWords := CountWords(text)
+    g["Bar"].Value := 0
     for i, ch in chars {
         if Abort
             break
         ; Pause while our own window is focused, so keystrokes never land in the GUI.
         while (WinActive("ahk_id " g.Hwnd) && !Abort) {
-            g["Status"].Text := "Paused — Human Typer is focused. Click the target field to resume."
+            g["Status"].Text := "Paused - Human Typer is focused. Click the target field to resume."
             Sleep 200
         }
         if Abort
@@ -97,7 +103,19 @@ TypeHuman(text, wpm, shiftEnter) {
             delay += Random(700, 2500)                ; occasional "thinking"
 
         Sleep Round(delay)
-        if (Mod(i, 10) = 0)
-            g["Status"].Text := "Typing " i "/" chars.Length "  (Ctrl+F9 to stop)"
+        if (Mod(i, 10) = 0) {
+            pct := Round(i / chars.Length * 100)
+            g["Bar"].Value := pct
+            g["Status"].Text := "Typing - " CountWords(SubStr(text, 1, i)) "/" totalWords " words (" pct "%)  (Ctrl+F9 to stop)"
+        }
     }
+}
+
+CountWords(s) {
+    n := 0, pos := 1
+    while RegExMatch(s, "\S+", &m, pos) {
+        n++
+        pos := m.Pos + m.Len
+    }
+    return n
 }

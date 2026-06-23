@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+*"   # e.g. 0.2, 1.0, 1.2.3
+      - "v[0-9]+*"          # e.g. v0.2, v1.0
+
+permissions:
+  contents: write          # needed to create the release
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile to exe
+        uses: benmusson/ahk2exe-action@v1
+        with:
+          in: .\human-typer.ahk
+          out: .\dist\HumanTyper.exe
+          target: x64
+          ahk-tag: v2.0.26        # pin to a known-good AHK v2 release
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release with exe
+        run: gh release create "$env:GITHUB_REF_NAME" .\dist\HumanTyper.exe --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
